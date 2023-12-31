@@ -1,6 +1,6 @@
 from google.oauth2 import service_account
 from config.config import config
-import googleapiclient.discovery
+from googleapiclient import discovery
 
 SERVICE_ACCOUNT_INFO = config().gmail_account_data
 
@@ -12,7 +12,7 @@ def connect_to_gmail():
         SERVICE_ACCOUNT_INFO, scopes=SCOPES
     )
 
-    service = googleapiclient.discovery.build("gmail", "v1", credentials=credentials)
+    service = discovery.build("gmail", "v1", credentials=credentials)
 
     return service
 
@@ -22,7 +22,7 @@ def connect_to_calendar():
         SERVICE_ACCOUNT_INFO, scopes=SCOPES
     )
 
-    service = googleapiclient.discovery.build("calendar", "v3", credentials=credentials)
+    service = discovery.build("calendar", "v3", credentials=credentials)
 
     return service
 

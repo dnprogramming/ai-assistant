@@ -11,8 +11,8 @@ model = genai.GenerativeModel('gemini-pro')
 
 class gemini:
     def generate_text(prompt):
-        question = "Please get the description, subject, and date of the meeting: " + prompt
+        question = "Please get the description, subject, and write the date as a datetime for the meeting and return it as json: " + prompt
         response = model.generate_content(question)
-        text = response.text.replace('•', '  *')
-        print(response)
+        text = response.text.replace('•', '')
+        print(text)
         return Markdown(textwrap.indent(text, '> ', predicate=lambda _: True))

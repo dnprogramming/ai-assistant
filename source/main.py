@@ -1,4 +1,6 @@
 import base64
+import os.path
+import re
 from email.mime.text import MIMEText
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -6,30 +8,27 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from config import config
+from utils import gemini
 from time import sleep
-from utils import gmail as service
-import os.path
 
 
-ASSISTANT_SERVICE_ACCOUNT_INFO = config.Config().assistant_credentials
-MAIN_SERVICE_ACCOUNT_INFO = config.Config().main_credentials
-
+ACCOUNT_INFO = config.Config().credentials
 ASSISTANT_SCOPES = [config.Config().assistant_scopes]
 MAIN_SCOPES = [config.Config().main_scopes]
-
 
 class Main:
 
     def __init__(self):
         self.target_email = config.Config().email_to_listen_for
 
-    def scheduleMeeting(self, meeting):
+    def scheduleMeeting(self, meetinginfo, main_creds):
         email_pattern = r"[\w\.-]+@[\w\.-]+\.\w+"
 
         # Find all email matches
-        attendees = re.findall(email_pattern, meeting)
+        attendees = re.findall(email_pattern, meetinginfo)
 
-        print(attendees)
+        # Query AI
+        gemini.gemini.generate_text(meetinginfo)
 
         # event = {
         #     "summary": "Your meeting title",
@@ -50,29 +49,43 @@ class Main:
         
 
     def main(self):
+        assistant_creds = None
+        assistant_service = None
+        main_creds = None
         while True:
-            creds = None
-            service = None
             if os.path.exists("assistant_token.json"):
-                creds = Credentials.from_authorized_user_file(
+                assistant_creds = Credentials.from_authorized_user_file(
                     "assistant_token.json", ASSISTANT_SCOPES
                 )
-                service = build("gmail", "v1", credentials=creds)
-            if not creds or not creds.valid:
-                if creds and creds.expired and creds.refresh_token:
-                    creds.refresh(Request())
+                assistant_service = build("gmail", "v1", credentials=assistant_creds)
+            if not assistant_creds or not assistant_creds.valid:
+                if assistant_creds and assistant_creds.expired and assistant_creds.refresh_token:
+                    assistant_creds.refresh(Request())
                 else:
                     flow = InstalledAppFlow.from_client_secrets_file(
-                        ASSISTANT_SERVICE_ACCOUNT_INFO, ASSISTANT_SCOPES
+                        ACCOUNT_INFO, ASSISTANT_SCOPES
                     )
-                    creds = flow.run_local_server(port=0)
+                    assistant_creds = flow.run_local_server(port=0)
                     with open("assistant_token.json", "w") as token:
-                        token.write(creds.to_json())
+                        token.write(assistant_creds.to_json())
 
-                    service = build("gmail", "v1", credentials=creds)
-                    print(service)
+                    assistant_service = build("gmail", "v1", credentials=assistant_creds)
+            if os.path.exists("main_token.json"):
+                main_creds = Credentials.from_authorized_user_file(
+                    "main_token.json", MAIN_SCOPES
+                )
+            if not main_creds or not main_creds.valid:
+                if main_creds and main_creds.expired and main_creds.refresh_token:
+                    main_creds.refresh(Request())
+                else:
+                    flow = InstalledAppFlow.from_client_secrets_file(
+                        ACCOUNT_INFO, MAIN_SCOPES
+                    )
+                    main_creds = flow.run_local_server(port=0)
+                    with open("main_token.json", "w") as token:
+                        token.write(main_creds.to_json())
             results = (
-                service.users()
+                assistant_service.users()
                 .messages()
                 .list(userId="me", q=f"from:{self.target_email}")
                 .execute()
@@ -82,17 +95,18 @@ class Main:
             if messages:
                 for message in messages:
                     message = (
-                        service.users()
+                        assistant_service.users()
                         .messages()
                         .get(userId="me", id=message["id"])
                         .execute()
                     )
                     if "UNREAD" in message["labelIds"]:
-                        messagedata = service.users().messages().get(userId="me", id=message["id"]).execute()
+                        messagedata = assistant_service.users().messages().get(userId="me", id=message["id"]).execute()
                         payload = messagedata["snippet"]
-                        print(messagedata)
                         
-                        service.users().messages().modify(
+                        self.scheduleMeeting(payload, main_creds)
+                        
+                        assistant_service.users().messages().modify(
                             userId="me",
                             id=message["id"],
                             body={"removeLabelIds": ["UNREAD"]},
@@ -106,7 +120,7 @@ class Main:
 
                         try:
                             message = (
-                                service.users()
+                                assistant_service.users()
                                 .messages()
                                 .send(userId="me", body=create_message)
                                 .execute()

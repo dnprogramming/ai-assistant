@@ -4,9 +4,12 @@ import os
 class Config:
 
     def __init__(self):
-        self.gmail_account_data = os.environ.get("GMAIL_ACCOUNT_DATA")
-        self.bard_api_key = os.environ.get("BARD_API_KEY")
+        self.assistant_credentials = os.environ.get("ASSISTANT_CREDENTIALS")
+        self.assistant_scopes = os.environ.get("ASSISTANT_SCOPES")
+        self.gemini_api_key = os.environ.get("GEMINI_API_KEY")
         self.email_to_listen_for = os.environ.get("EMAIL_TO_LISTEN_FOR")
+        self.main_credentials = os.environ.get("MAIN_CREDENTIALS")
+        self.main_scopes = os.environ.get("MAIN_SCOPES")
 
 
 config = Config()

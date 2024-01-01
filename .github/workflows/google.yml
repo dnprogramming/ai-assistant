@@ -39,18 +39,19 @@ jobs:
         service_account_key: ${{ secrets.GKE_SA_KEY }}
         project_id: ${{ secrets.GKE_PROJECT }}
 
-
-    - run: |-
+    - name: Get File
+      run: |-
         gcloud storage cp gs://$BUCKET/$OBJECT $SAVE_LOCATION
 
-    - run: |-
+    - name: Configure Docker
+      run: |-
         gcloud --quiet auth configure-docker
 
-    - uses: google-github-actions/get-gke-credentials@db150f2cc60d1716e61922b832eae71d2a45938f
+    - name: Get Credentials
+      uses: 'google-github-actions/get-gke-credentials@v2'
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}
-        credentials: ${{ secrets.GKE_SA_KEY }}
 
     # Build the Docker image
     - name: Build

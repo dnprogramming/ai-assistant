@@ -1,14 +1,16 @@
 import base64
 import os.path
-import re
+import pytz
+from datetime import datetime
 from email.mime.text import MIMEText
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
-from config import config
+from utils import calendar
 from utils import gemini
+from config import config
 from time import sleep
 
 
@@ -16,37 +18,14 @@ ACCOUNT_INFO = config.Config().credentials
 ASSISTANT_SCOPES = [config.Config().assistant_scopes]
 MAIN_SCOPES = [config.Config().main_scopes]
 
+
 class Main:
 
     def __init__(self):
         self.target_email = config.Config().email_to_listen_for
-
-    def scheduleMeeting(self, meetinginfo, main_creds):
-        email_pattern = r"[\w\.-]+@[\w\.-]+\.\w+"
-
-        # Find all email matches
-        attendees = re.findall(email_pattern, meetinginfo)
-
-        # Query AI
-        gemini.gemini.generate_text(meetinginfo)
-
-        # event = {
-        #     "summary": "Your meeting title",
-        #     "description": "Meeting description",
-        #     "start": {
-        #         "dateTime": "2024-01-01T10:00:00-07:00"
-        #     },
-        #     "end": {
-        #         "dateTime": "2024-01-01T11:00:00-07:00"
-        #     },
-        #     "attendees": [
-        #         {"email": email} for email in attendees
-        #     ]
-        # }
-
-# Send meeting invites
-    #service.events().insert(calendarId="primary", body=event).execute()
-        
+        self.scheduleMeeting = calendar.calendar().scheduleMeeting
+        self.sendDailyMeetingsEmail = calendar.calendar().sendDailyMeetingsEmail
+        self.sent_daily_meetings_email = False
 
     def main(self):
         assistant_creds = None
@@ -59,7 +38,11 @@ class Main:
                 )
                 assistant_service = build("gmail", "v1", credentials=assistant_creds)
             if not assistant_creds or not assistant_creds.valid:
-                if assistant_creds and assistant_creds.expired and assistant_creds.refresh_token:
+                if (
+                    assistant_creds
+                    and assistant_creds.expired
+                    and assistant_creds.refresh_token
+                ):
                     assistant_creds.refresh(Request())
                 else:
                     flow = InstalledAppFlow.from_client_secrets_file(
@@ -69,7 +52,9 @@ class Main:
                     with open("assistant_token.json", "w") as token:
                         token.write(assistant_creds.to_json())
 
-                    assistant_service = build("gmail", "v1", credentials=assistant_creds)
+                    assistant_service = build(
+                        "gmail", "v1", credentials=assistant_creds
+                    )
             if os.path.exists("main_token.json"):
                 main_creds = Credentials.from_authorized_user_file(
                     "main_token.json", MAIN_SCOPES
@@ -91,7 +76,17 @@ class Main:
                 .execute()
             )
             messages = results.get("messages", [])
-
+            if (
+                datetime.now().astimezone(pytz.timezone("US/Central")).hour == 4
+                and self.sent_daily_meetings_email == True
+            ):
+                self.sent_daily_meetings_email = False
+            if (
+                datetime.now().astimezone(pytz.timezone("US/Central")).hour == 6
+                and self.sent_daily_meetings_email == False
+            ):
+                self.sendDailyMeetingsEmail(main_creds, assistant_service)
+                self.sent_daily_meetings_email = True
             if messages:
                 for message in messages:
                     message = (
@@ -101,11 +96,12 @@ class Main:
                         .execute()
                     )
                     if "UNREAD" in message["labelIds"]:
-                        messagedata = assistant_service.users().messages().get(userId="me", id=message["id"]).execute()
-                        payload = messagedata["snippet"]
-                        
-                        self.scheduleMeeting(payload, main_creds)
-                        
+                        messagedata = (
+                            assistant_service.users()
+                            .messages()
+                            .get(userId="me", id=message["id"])
+                            .execute()
+                        )
                         assistant_service.users().messages().modify(
                             userId="me",
                             id=message["id"],
@@ -125,6 +121,72 @@ class Main:
                                 .send(userId="me", body=create_message)
                                 .execute()
                             )
+                        except HttpError as error:
+                            print(f"An error occurred: {error}")
+                            message = None
+
+                        try:
+                            emailreasoning = None
+                            for header in messagedata["payload"]["headers"]:
+                                if header["name"] == "Subject":
+                                    emailreasoning = header["value"].lower()
+                            if "meeting" in emailreasoning:
+                                body = messagedata["payload"]["parts"][0]["body"]
+                                entire_body = base64.urlsafe_b64decode(
+                                    body["data"].encode("ASCII")
+                                ).decode("utf-8")
+                                payload = entire_body
+                                self.scheduleMeeting(payload, main_creds)
+                            elif "translate" in emailreasoning:
+                                body = messagedata["payload"]["parts"][0]["body"]
+                                entire_body = base64.urlsafe_b64decode(
+                                    body["data"].encode("ASCII")
+                                ).decode("utf-8")
+                                payload = entire_body
+                                result = gemini.gemini.translate(payload)
+                                message = MIMEText(result)
+                                message["to"] = self.target_email
+                                message["subject"] = "Translation you requested"
+                                create_message = {
+                                    "raw": base64.urlsafe_b64encode(
+                                        message.as_bytes()
+                                    ).decode()
+                                }
+                                try:
+                                    message = (
+                                        assistant_service.users()
+                                        .messages()
+                                        .send(userId="me", body=create_message)
+                                        .execute()
+                                    )
+                                except HttpError as error:
+                                    print(f"An error occurred: {error}")
+                                    message = None
+                            else:
+                                body = messagedata["payload"]["parts"][0]["body"]
+                                entire_body = base64.urlsafe_b64decode(
+                                    body["data"].encode("ASCII")
+                                ).decode("utf-8")
+                                payload = entire_body
+                                result = gemini.gemini.question(payload)
+                                message = MIMEText(result)
+                                message["to"] = self.target_email
+                                message["subject"] = "Answer to your question"
+                                create_message = {
+                                    "raw": base64.urlsafe_b64encode(
+                                        message.as_bytes()
+                                    ).decode()
+                                }
+                                try:
+                                    message = (
+                                        assistant_service.users()
+                                        .messages()
+                                        .send(userId="me", body=create_message)
+                                        .execute()
+                                    )
+                                except HttpError as error:
+                                    print(f"An error occurred: {error}")
+                                    message = None
                         except HttpError as error:
                             print(f"An error occurred: {error}")
                             message = None

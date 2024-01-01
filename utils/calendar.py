@@ -1,40 +1,89 @@
-from config import Config
-from datetime import timedelta
-from dateutil import parser
+import base64
+import re
+from email.mime.text import MIMEText
+from requests import HTTPError
+from config import config
+from utils import gemini
+from datetime import datetime, timedelta
+from googleapiclient.discovery import build
 
 
 class calendar:
 
-    def extract_meeting_info(email_data):
-        host = email_data["from"]
-        recipients = email_data["to"]
-        try:
-            date_time_str = email_data["snippet"].split("at")[1].strip()
-            meeting_time = parser.parse(date_time_str, fuzzy=True)
-        except ValueError:
-            print("Failed to parse date/time from email.")
-            return None, None, None
-        return host, recipients, meeting_time
+    def __init__(self):
+        self.target_email = config.Config().email_to_listen_for
 
-    def create_meeting_event(
-        service, host, recipients, meeting_time, summary="Meeting"
-    ):
-        """Creates a meeting event in Google Calendar."""
+    def sendDailyMeetingsEmail(self, main_creds, assistant_service):
+        service = build("calendar", "v3", credentials=main_creds)
+        today = datetime.datetime.today()
+        start = (
+            datetime.datetime(today.year, today.month, today.day, 00, 00)
+        ).isoformat() + "Z"
+        tomorrow = today + datetime.timedelta(days=1)
+        end = (
+            datetime.datetime(tomorrow.year, tomorrow.month, tomorrow.day, 00, 00)
+        ).isoformat() + "Z"
+        events_results = (
+            service.events()
+            .list(
+                calendarId="primary",
+                timeMin=start,
+                timeMax=end,
+                singleEvents=True,
+                orderBy="startTime",
+            )
+            .execute()
+        )
+        message = MIMEText(events_results.get("items", []))
+        message["to"] = self.target_email
+        message["subject"] = "Your Schedule for Today."
+        create_message = {"raw": base64.urlsafe_b64encode(message.as_bytes()).decode()}
+        try:
+            message = (
+                assistant_service.users()
+                .messages()
+                .send(userId="me", body=create_message)
+                .execute()
+            )
+        except HTTPError as error:
+            print(f"An error occurred: {error}")
+            message = None
+
+    def scheduleMeeting(self, meetinginfo, main_creds):
+        email_pattern = r"[\w\.-]+@[\w\.-]+\.\w+"
+        attendees = re.findall(email_pattern, meetinginfo)
+        result = gemini.gemini.generate_text(meetinginfo)
+        results = result.split("|")
         event = {
-            "summary": summary,
+            "summary": results[0],
+            "description": results[1],
             "start": {
-                "dateTime": meeting_time.strftime("%Y-%m-%dT%H:%M:%S"),
-                "timeZone": "America/Chicago",
-            },
-            "end": {
-                "dateTime": (meeting_time + timedelta(minutes=60)).strftime(
-                    "%Y-%m-%dT%H:%M:%S"
+                "dateTime": datetime.isoformat(
+                    datetime.fromisoformat(
+                        results[2].replace("Date: ", "").replace(" ", "")
+                    ).astimezone("America/Chicago")
                 ),
                 "timeZone": "America/Chicago",
             },
-            "attendees": [
-                {"email": host},
-                *[{"email": recipient} for recipient in recipients],
-            ],
+            "end": {
+                "dateTime": datetime.isoformat(
+                    datetime.fromisoformat(
+                        results[2].replace("Date: ", "").replace(" ", "")
+                    ).astimezone("America/Chicago")
+                    + timedelta(minutes=60)
+                ),
+                "timeZone": "America/Chicago",
+            },
+            "attendees": [{"email": email} for email in attendees],
+            "reminders": {
+                "useDefault": False,
+                "overrides": [
+                    {"method": "email", "minutes": 24 * 60},
+                    {"method": "popup", "minutes": 10},
+                ],
+            },
         }
-        event = service.events().insert(calendarId="primary", body=event).execute()
+        service = build("calendar", "v3", credentials=main_creds)
+        service.events().insert(
+            calendarId="primary", body=event, sendUpdates="all"
+        ).execute()

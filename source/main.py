@@ -1,6 +1,5 @@
 import base64
 import os.path
-import sys
 import pytz
 from datetime import datetime
 from email.mime.text import MIMEText
@@ -49,10 +48,7 @@ class Main:
                     flow = InstalledAppFlow.from_client_secrets_file(
                         ACCOUNT_INFO, ASSISTANT_SCOPES
                     )
-                    assistant_creds = flow.run_local_server(bind_addr="0.0.0.0", authorization_prompt_message='Please visit this URL: {url}', open_browser=False, port=0)
-                    authorization_url = assistant_creds.get("url")
-                    authorization_prompt_message = assistant_creds.get("authorization_prompt_message")
-                    sys.stderr.write(authorization_prompt_message.format(url=authorization_url) + "\n")
+                    assistant_creds = flow.run_local_server(port=0)
                     with open("assistant_token.json", "w") as token:
                         token.write(assistant_creds.to_json())
 
@@ -70,10 +66,7 @@ class Main:
                     flow = InstalledAppFlow.from_client_secrets_file(
                         ACCOUNT_INFO, MAIN_SCOPES
                     )
-                    main_creds = flow.run_local_server(bind_addr="0.0.0.0", authorization_prompt_message='Please visit this URL: {url}', open_browser=False, port=0)
-                    authorization_url = main_creds.get("url")
-                    authorization_prompt_message = main_creds.get("authorization_prompt_message")
-                    sys.stderr.write(authorization_prompt_message.format(url=authorization_url) + "\n")
+                    main_creds = flow.run_local_server(port=0)
                     with open("main_token.json", "w") as token:
                         token.write(main_creds.to_json())
             results = (

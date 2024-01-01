@@ -9,7 +9,11 @@ env:
   BUCKET: ${{ secrets.GAR_BUCKET }}
   PROJECT_ID: ${{ secrets.GKE_PROJECT }}
   OBJECT: ${{ secrets.GAR_OBJECT }}
+  OBJECT1: ${{ secrets.GAR_OBJECT1 }}
+  OBJECT2: ${{ secrets.GAR_OBJECT2 }}
   SAVE_LOCATION: ${{ secrets.GAR_SAVE_LOCATION }}
+  SAVE_LOCATION1: ${{ secrets.GAR_SAVE_LOCATION1 }}
+  SAVE_LOCATION2: ${{ secrets.GAR_SAVE_LOCATION2 }}
   GAR_LOCATION: ${{ secrets.GAR_LOCATION }}
   GKE_CLUSTER: ${{ secrets.GKE_CLUSTER }}
   GKE_ZONE: ${{ secrets.GKE_ZONE }}
@@ -42,6 +46,14 @@ jobs:
     - name: Get File
       run: |-
         gcloud storage cp gs://$BUCKET/$OBJECT $SAVE_LOCATION
+
+    - name: Get File
+      run: |-
+        gcloud storage cp gs://$BUCKET/$OBJECT1 $SAVE_LOCATION1
+
+    - name: Get File
+      run: |-
+        gcloud storage cp gs://$BUCKET/$OBJECT2 $SAVE_LOCATION2
 
     - name: Configure Docker
       run: |-

@@ -82,6 +82,6 @@ jobs:
       run: |-
         kubectl get deployment pythonai -o yaml > deployment.yaml
         sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA|g" deployment.yaml
-        kubectl apply -f -
+        kubectl apply -f deployment.yaml
         kubectl rollout status deployment/$DEPLOYMENT_NAME
         kubectl get services -o wide

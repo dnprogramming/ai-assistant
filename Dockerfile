@@ -9,6 +9,8 @@ RUN echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http:/
 RUN apt-get update
 RUN apt-get install google-chrome-stable -y
 
+ENV DEBIAN_FRONTEND noninteractive
+
 COPY . .
 
 RUN pip install -r requirements.txt

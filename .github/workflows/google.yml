@@ -31,12 +31,11 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
 
-    # Setup gcloud CLI
     - id: 'auth'
       name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v0'
+      uses: 'google-github-actions/auth@v2'
       with:
-        credentials_json: ${{secrets.GOOGLE_CREDENTIALS_JSON }}
+        credentials_json: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
 
     - uses: google-github-actions/setup-gcloud@1bee7de035d65ec5da40a31f8589e240eba8fde5
       with:
@@ -74,7 +73,7 @@ jobs:
         docker push "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
 
     - name: Set up GKE credentials
-      uses: google-github-actions/get-gke-credentials@v0
+      uses: google-github-actions/get-gke-credentials@v2
       with:
         cluster_name: ${{ env.GKE_CLUSTER }}
         location: ${{ env.GKE_ZONE }}

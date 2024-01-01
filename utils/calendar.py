@@ -1,4 +1,5 @@
 import base64
+import pytz
 import re
 from email.mime.text import MIMEText
 from requests import HTTPError
@@ -61,7 +62,7 @@ class calendar:
                 "dateTime": datetime.isoformat(
                     datetime.fromisoformat(
                         results[2].replace("Date: ", "").replace(" ", "")
-                    ).astimezone("America/Chicago")
+                    ).astimezone(pytz.timezone("US/Central"))
                 ),
                 "timeZone": "America/Chicago",
             },
@@ -69,7 +70,7 @@ class calendar:
                 "dateTime": datetime.isoformat(
                     datetime.fromisoformat(
                         results[2].replace("Date: ", "").replace(" ", "")
-                    ).astimezone("America/Chicago")
+                    ).astimezone(pytz.timezone("US/Central"))
                     + timedelta(minutes=60)
                 ),
                 "timeZone": "America/Chicago",

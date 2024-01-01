@@ -28,10 +28,17 @@ jobs:
       uses: actions/checkout@v4
 
     # Setup gcloud CLI
+    - id: 'auth'
+      name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: ${{secrets.GOOGLE_CREDENTIALS_JSON }}
+
     - uses: google-github-actions/setup-gcloud@1bee7de035d65ec5da40a31f8589e240eba8fde5
       with:
         service_account_key: ${{ secrets.GKE_SA_KEY }}
         project_id: ${{ secrets.GKE_PROJECT }}
+
 
     - run: |-
         gcloud storage cp gs://$BUCKET/$OBJECT $SAVE_LOCATION

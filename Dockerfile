@@ -4,6 +4,10 @@ FROM python:3.12
 # Set the working directory inside the container
 WORKDIR /app
 
+RUN apt-get install -y wget
+RUN wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+RUN apt-get install -y ./google-chrome-stable_current_amd64.deb
+
 # Copy the application files to the container
 COPY . .
 

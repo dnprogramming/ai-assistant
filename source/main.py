@@ -48,7 +48,7 @@ class Main:
                     flow = InstalledAppFlow.from_client_secrets_file(
                         ACCOUNT_INFO, ASSISTANT_SCOPES
                     )
-                    assistant_creds = flow.run_local_server(port=0)
+                    assistant_creds = flow.run_local_server(bind_addr="0.0.0.0", open_browser=False, port=0)
                     with open("assistant_token.json", "w") as token:
                         token.write(assistant_creds.to_json())
 
@@ -66,7 +66,7 @@ class Main:
                     flow = InstalledAppFlow.from_client_secrets_file(
                         ACCOUNT_INFO, MAIN_SCOPES
                     )
-                    main_creds = flow.run_local_server(port=0)
+                    main_creds = flow.run_local_server(bind_addr="0.0.0.0", open_browser=False, port=0)
                     with open("main_token.json", "w") as token:
                         token.write(main_creds.to_json())
             results = (

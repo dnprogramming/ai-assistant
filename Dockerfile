@@ -10,6 +10,7 @@ RUN apt-get update
 RUN apt-get install google-chrome-stable -y
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV PYTHONUNBUFFERED=1
 
 COPY . .
 

@@ -70,3 +70,18 @@ jobs:
     - name: Publish
       run: |-
         docker push "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
+
+    - name: Set up GKE credentials
+      uses: google-github-actions/get-gke-credentials@v2
+      with:
+        cluster_name: ${{ env.GKE_CLUSTER }}
+        location: ${{ env.GAR_LOCATION }}
+        project_id: ${{ secrets.GKE_PROJECT_ID }}
+        
+    - name: Deploy Generate Deployment File
+      run: |-
+        gcloud container clusters get-credentials autopilot-cluster-1 --region us-central1 --project gen-lang-client-0839206159 && kubectl get deployment pythonai -o yaml
+        sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA|g" deployment.yaml
+        kubectl apply -f deployment.yaml
+        kubectl rollout status deployment/$DEPLOYMENT_NAME
+        kubectl get services -o wide

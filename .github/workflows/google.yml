@@ -84,5 +84,3 @@ jobs:
       run: |-
         digest="${DIGEST}"
         kubectl set image deployment/pythonai pythonai-sha256-1=gcr.io/$PROJECT_ID/pythonai@$digest
-        kubectl rollout status deployment/$DEPLOYMENT_NAME
-        kubectl get services -o wide

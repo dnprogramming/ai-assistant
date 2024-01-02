@@ -83,4 +83,4 @@ jobs:
     - name: Deploy
       run: |-
         digest="${DIGEST}"
-        kubectl set image deployment/pythonai pythonai-sha256-1=gcr.io/$PROJECT_ID/pythonai@$digest
+        kubectl set image deployment/pythonai pythonai-sha256-1=$digest

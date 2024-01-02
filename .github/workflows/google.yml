@@ -82,7 +82,7 @@ jobs:
       run: |-
         gcloud components install gke-gcloud-auth-plugin
         gcloud container clusters get-credentials $GKE_CLUSTER --region us-central1 --project $PROJECT_ID
-        kubectl get deployment pythonai -o yaml
+        kubectl get deployment pythonai -o yaml > deployment.yaml
         sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA|g" deployment.yaml
         kubectl apply -f deployment.yaml
         kubectl rollout status deployment/$DEPLOYMENT_NAME

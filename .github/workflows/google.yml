@@ -70,7 +70,7 @@ jobs:
     - name: Publish
       run: |-
         docker push "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
-        digest=$(docker inspect --format='{{index .RepoDigests 0}}' "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA" | jq -r '.[0]')
+        digest=$(docker image inspect gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA --format '{{index .RepoDigests 0}}')
         echo "DIGEST=$digest" >> $GITHUB_ENV
 
     - name: Set up GKE credentials

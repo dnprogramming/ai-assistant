@@ -81,13 +81,13 @@ jobs:
     - name: Deploy Generate Deployment File
       run: |-
         kubectl get deployment pythonai -o yaml > deployment.yaml
-        sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA|g" deployment.yaml
+        sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE@sha256:$GITHUB_SHA|g" deployment.yaml
     
     - uses: actions/upload-artifact@v4
       with:
           path: deployment.yaml 
           retention-days: 1
-          
+
     - name: Deploy to GKE
       run: |-
         kubectl apply -f deployment.yaml

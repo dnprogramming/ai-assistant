@@ -12,5 +12,3 @@ class Config:
 
 
 config = Config()
-
-# Use the retrieved values as needed

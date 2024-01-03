@@ -101,8 +101,10 @@ class Main:
                             .execute()
                         )
                         for header in messagedata["payload"]["headers"]:
-                            if header["name"] == "From":
-                                if header["value"].lower() in map(str.lower, self.target_emails):
+                            if header["name"] == "Return-Path":
+                                if header["value"].replace("<", "").replace(
+                                    ">", ""
+                                ).lower() in map(str.lower, self.target_emails):
                                     senderAuthorized = True
                                     replyTo = header["value"]
                             if header["name"] == "Subject":

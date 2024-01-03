@@ -22,7 +22,7 @@ MAIN_SCOPES = [config.Config().main_scopes]
 class Main:
 
     def __init__(self):
-        self.target_emails = config.Config().emails_to_listen_for
+        self.target_emails = config.Config().emails_to_listen_for.split(",")
         self.scheduleMeeting = calendar.calendar().scheduleMeeting
         self.sendDailyMeetingsEmail = calendar.calendar().sendDailyMeetingsEmail
         self.sent_daily_meetings_email = False

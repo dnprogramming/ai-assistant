@@ -93,13 +93,6 @@ class Main:
                     emailreasoning = None
                     senderAuthorized = False
                     replyTo = None
-                    for header in messagedata["payload"]["headers"]:
-                        if header["name"] == "From":
-                            if header["value"] in self.target_emails:
-                                senderAuthorized = True
-                                replyTo = header["value"]
-                        if header["name"] == "Subject":
-                            emailreasoning = header["value"].lower()
                     if "UNREAD" in message["labelIds"]:
                         messagedata = (
                             assistant_service.users()
@@ -107,6 +100,13 @@ class Main:
                             .get(userId="me", id=message["id"])
                             .execute()
                         )
+                        for header in messagedata["payload"]["headers"]:
+                            if header["name"] == "From":
+                                if header["value"] in self.target_emails:
+                                    senderAuthorized = True
+                                    replyTo = header["value"]
+                            if header["name"] == "Subject":
+                                emailreasoning = header["value"].lower()
                         assistant_service.users().messages().modify(
                             userId="me",
                             id=message["id"],

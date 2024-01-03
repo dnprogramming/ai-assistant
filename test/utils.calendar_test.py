@@ -6,6 +6,7 @@ from email.mime.text import MIMEText
 from requests import HTTPError
 from utils import calendar
 
+
 class TestCalendar(unittest.TestCase):
 
     def setUp(self):
@@ -50,11 +51,17 @@ class TestCalendar(unittest.TestCase):
         self.calendar.sendDailyMeetingsEmail(self.main_creds, self.assistant_service)
 
         # Assertions
-        build_mock.assert_called_once_with("calendar", "v3", credentials=self.main_creds)
+        build_mock.assert_called_once_with(
+            "calendar", "v3", credentials=self.main_creds
+        )
         events_list_mock.assert_called_once_with(
             calendarId="primary",
-            timeMin=datetime.now().replace(hour=0, minute=0, second=0).isoformat() + "Z",
-            timeMax=(datetime.now() + timedelta(days=1)).replace(hour=0, minute=0, second=0).isoformat() + "Z",
+            timeMin=datetime.now().replace(hour=0, minute=0, second=0).isoformat()
+            + "Z",
+            timeMax=(datetime.now() + timedelta(days=1))
+            .replace(hour=0, minute=0, second=0)
+            .isoformat()
+            + "Z",
             singleEvents=True,
             orderBy="startTime",
         )
@@ -69,7 +76,9 @@ class TestCalendar(unittest.TestCase):
     def test_scheduleMeeting(self):
         # Mock the gemini.gemini.generate_text function
         generate_text_mock = MagicMock()
-        generate_text_mock.return_value = "Meeting Summary | Meeting Description | Date: 2022-01-01 10:00:00"
+        generate_text_mock.return_value = (
+            "Meeting Summary | Meeting Description | Date: 2022-01-01 10:00:00"
+        )
         calendar.gemini.gemini.generate_text = generate_text_mock
 
         # Mock the build function
@@ -86,7 +95,9 @@ class TestCalendar(unittest.TestCase):
 
         # Assertions
         generate_text_mock.assert_called_once_with("Meeting info")
-        build_mock.assert_called_once_with("calendar", "v3", credentials=self.main_creds)
+        build_mock.assert_called_once_with(
+            "calendar", "v3", credentials=self.main_creds
+        )
         events_insert_mock.assert_called_once_with(
             calendarId="primary",
             body={
@@ -111,6 +122,7 @@ class TestCalendar(unittest.TestCase):
             },
             sendUpdates="all",
         )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -26,7 +26,7 @@ class gemini:
         response = model.generate_content(question)
         text = response.text
         return text
-    
+
     def question(prompt):
         question = prompt
         response = model.generate_content(question)

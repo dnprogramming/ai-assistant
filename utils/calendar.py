@@ -12,7 +12,7 @@ from googleapiclient.discovery import build
 class calendar:
 
     def __init__(self):
-        self.target_email = config.Config().email_to_listen_for
+        self.target_emails = config.Config().emails_to_listen_for
 
     def sendDailyMeetingsEmail(self, main_creds, assistant_service):
         service = build("calendar", "v3", credentials=main_creds)
@@ -36,7 +36,7 @@ class calendar:
             .execute()
         )
         message = MIMEText(events_results.get("items", []))
-        message["to"] = self.target_email
+        message["to"] = self.target_emails[0]
         message["subject"] = "Your Schedule for Today."
         create_message = {"raw": base64.urlsafe_b64encode(message.as_bytes()).decode()}
         try:

@@ -102,7 +102,7 @@ class Main:
                         )
                         for header in messagedata["payload"]["headers"]:
                             if header["name"] == "From":
-                                if header["value"] in self.target_emails:
+                                if header["value"].lower() in map(str.lower, self.target_emails):
                                     senderAuthorized = True
                                     replyTo = header["value"]
                             if header["name"] == "Subject":

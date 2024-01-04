@@ -71,17 +71,17 @@ class Main:
                         token.write(main_creds.to_json())
             results = assistant_service.users().messages().list(userId="me").execute()
             messages = results.get("messages", [])
-            # if (
-            #     datetime.now().astimezone(pytz.timezone("US/Central")).hour == 4
-            #     and self.sent_daily_meetings_email == True
-            # ):
-            #     self.sent_daily_meetings_email = False
-            # if (
-            #     datetime.now().astimezone(pytz.timezone("US/Central")).hour == 6
-            #     and self.sent_daily_meetings_email == False
-            # ):
-            #     self.sendDailyMeetingsEmail(main_creds, assistant_service)
-            #     self.sent_daily_meetings_email = True
+            if (
+                datetime.now().astimezone(pytz.timezone("US/Central")).hour == 4
+                and self.sent_daily_meetings_email == True
+            ):
+                self.sent_daily_meetings_email = False
+            if (
+                datetime.now().astimezone(pytz.timezone("US/Central")).hour == 6
+                and self.sent_daily_meetings_email == False
+            ):
+                self.sendDailyMeetingsEmail(main_creds, assistant_service)
+                self.sent_daily_meetings_email = True
             if messages:
                 for message in messages:
                     message = (

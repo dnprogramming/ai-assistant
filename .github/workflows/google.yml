@@ -25,6 +25,10 @@ env:
 jobs:
   setup-build-publish-deploy:
     name: Setup, Build, Publish, and Deploy
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
     runs-on: ubuntu-latest
     environment: production
 
@@ -67,6 +71,20 @@ jobs:
         --build-arg GITHUB_REF="$GITHUB_REF" \
         .
 
+    - name: Run Snyk to check Docker image for vulnerabilities
+      continue-on-error: false
+      uses: snyk/actions/docker@14818c4695ecc4045f33c9cee9e795a788711ca4
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA
+        args: --file=Dockerfile
+
+    - name: Upload result to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: snyk.sarif
+
     - name: Publish
       run: |-
         docker push "gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA"
@@ -83,4 +101,4 @@ jobs:
     - name: Deploy
       run: |-
         digest="${DIGEST}"
-        kubectl set image deployment/pythonai pythonai-sha256-1=$digest
+        kubectl set image deployment/$IMAGE pythonai-sha256-1=$digest

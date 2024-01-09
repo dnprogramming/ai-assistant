@@ -41,7 +41,7 @@ jobs:
       id: ossar
 
     - name: Upload OSSAR results
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: ${{ steps.ossar.outputs.sarifFile }}
 
@@ -80,7 +80,7 @@ jobs:
         --build-arg GITHUB_REF="$GITHUB_REF" \
         .
     - name: Set up Snyk CLI to check for security issues
-      uses: snyk/actions/setup@806182742461562b67788a64410098c9d9b96adb
+      uses: snyk/actions/setup@3e2680e8df93a24b52d119b1305fb7cedc60ceae
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -89,7 +89,7 @@ jobs:
 
     - name: Run Snyk to check Docker image for vulnerabilities
       continue-on-error: true
-      uses: snyk/actions/docker@14818c4695ecc4045f33c9cee9e795a788711ca4
+      uses: snyk/actions/docker@3e2680e8df93a24b52d119b1305fb7cedc60ceae
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
@@ -97,12 +97,12 @@ jobs:
         args: --file=Dockerfile
 
     - name: Upload result to GitHub Code Scanning
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: snyk.sarif
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@7b7aa264d83dc58691451798b4d117d53d21edfe
+      uses: aquasecurity/trivy-action@d43c1f16c00cfd3978dde6c07f4bbcf9eb6993ca
       with:
         image-ref: gcr.io/${{ secrets.GKE_PROJECT }}/${{ secrets.GAR_IMAGE }}:${{ github.sha }}
         format: 'template'
@@ -111,7 +111,7 @@ jobs:
         severity: 'CRITICAL,HIGH'
 
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
 

@@ -18,7 +18,7 @@ class calendar:
         service = build("calendar", "v3", credentials=main_creds)
         today = datetime.today()
         start = (datetime(today.year, today.month, today.day, 00, 00)).isoformat() + "Z"
-        tomorrow = today + datetime.timedelta(days=1)
+        tomorrow = today + timedelta(days=1)
         end = (
             datetime(tomorrow.year, tomorrow.month, tomorrow.day, 00, 00)
         ).isoformat() + "Z"

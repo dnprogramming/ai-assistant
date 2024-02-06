@@ -51,7 +51,7 @@ jobs:
       with:
         credentials_json: ${{ secrets.GOOGLE_CREDENTIALS_JSON }}
 
-    - uses: google-github-actions/setup-gcloud@5a5f7b85fca43e76e53463acaa9d408a03c98d3a
+    - uses: google-github-actions/setup-gcloud@98ddc00a17442e89a24bbf282954a3b65ce6d200
       with:
         service_account_key: ${{ secrets.GKE_SA_KEY }}
         project_id: ${{ secrets.GKE_PROJECT }}
@@ -80,7 +80,7 @@ jobs:
         --build-arg GITHUB_REF="$GITHUB_REF" \
         .
     - name: Set up Snyk CLI to check for security issues
-      uses: snyk/actions/setup@3e2680e8df93a24b52d119b1305fb7cedc60ceae
+      uses: snyk/actions/setup@1d672a455ab3339ef0a0021e1ec809165ee12fad
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
@@ -89,7 +89,7 @@ jobs:
 
     - name: Run Snyk to check Docker image for vulnerabilities
       continue-on-error: true
-      uses: snyk/actions/docker@3e2680e8df93a24b52d119b1305fb7cedc60ceae
+      uses: snyk/actions/docker@1d672a455ab3339ef0a0021e1ec809165ee12fad
       env:
         SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
@@ -102,7 +102,7 @@ jobs:
         sarif_file: snyk.sarif
 
     - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@d43c1f16c00cfd3978dde6c07f4bbcf9eb6993ca
+      uses: aquasecurity/trivy-action@84384bd6e777ef152729993b8145ea352e9dd3ef
       with:
         image-ref: gcr.io/${{ secrets.GKE_PROJECT }}/${{ secrets.GAR_IMAGE }}:${{ github.sha }}
         format: 'template'
